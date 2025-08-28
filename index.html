@@ -589,12 +589,17 @@
                     const subject = todayRoutine[slot.time] || 'Free';
                     const isCurrent = this.currentTime === slot.hour;
                     
+                    // Skip free slots - only show busy ones
+                    if (subject.toLowerCase() === 'free') {
+                        return;
+                    }
+                    
                     const slotDiv = document.createElement('div');
                     slotDiv.className = `time-slot ${isCurrent ? 'current' : ''}`;
                     
                     slotDiv.innerHTML = `
                         <h3>${slot.time}</h3>
-                        <div class="${subject.toLowerCase() === 'free' ? 'no-class' : ''}">${subject}</div>
+                        <div>${subject}</div>
                     `;
                     
                     routineGrid.appendChild(slotDiv);
