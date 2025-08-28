@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Daily Routine Dashboard</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #ffffff;
+        }
+        
+        /* Particle Background */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+        
+        /* Three.js Space Background */
+        #space-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 2rem 0;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .title {
+            font-family: 'Orbitron', monospace;
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease-in-out infinite, titleFloat 3s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+            opacity: 0.8;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+        
+        .current-day {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            margin-top: 1rem;
+            color: #4ecdc4;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 5;
+        }
+        
+        /* Dashboard Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+        
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .card:hover::before {
+            left: 100%;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+        }
+        
+        .card-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .routine-title {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+        
+        .mess-title {
+            color: #4ecdc4;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+        }
+        
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #ff6b6b, #4ecdc4);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateX(30px);
+            animation: slideInLeft 0.6s ease-out forwards;
+        }
+        
+        .timeline-item:nth-child(n) {
+            animation-delay: calc(0.1s * var(--index));
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.8);
+            animation: pulse 2s infinite;
+        }
+        
+        .time-slot {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #4ecdc4;
+            transition: all 0.3s ease;
+        }
+        
+        .time-slot:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(10px);
+        }
+        
+        .time {
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            color: #4ecdc4;
+            font-size: 0.9rem;
+        }
+        
+        .subject {
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .free {
+            opacity: 0.6;
+            font-style: italic;
+        }
+        
+        .lunch {
+            background: linear-gradient(45deg, #ff6b6b, #ffa726);
+            color: #000;
+            font-weight: 600;
+        }
+        
+        /* Mess Menu */
+        .mess-item {
+            background: rgba(78, 205, 196, 0.1);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #4ecdc4;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .mess-item:nth-child(n) {
+            animation-delay: calc(0.1s * var(--index));
+        }
+        
+        .meal-time {
+            font-family: 'Orbitron', monospace;
+            font-weight: 600;
+            color: #4ecdc4;
+            margin-bottom: 0.5rem;
+        }
+        
+        .meal-items {
+            font-size: 1.1rem;
+        }
+        
+        /* Loading Animation */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(78, 205, 196, 0.3);
+            border-top: 3px solid #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Animations */
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px rgba(78, 205, 196, 0.8); }
+            50% { box-shadow: 0 0 25px rgba(78, 205, 196, 1); }
+            100% { box-shadow: 0 0 15px rgba(78, 205, 196, 0.8); }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+        
+        /* Floating Elements */
+        .floating-element {
+            position: absolute;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-20px) rotate(120deg); }
+            66% { transform: translateY(10px) rotate(240deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Particle Background -->
+    <div id="particles-js"></div>
+    
+    <!-- Three.js Space Background -->
+    <div id="space-background"></div>
+    
+    <!-- Main Content -->
+    <div class="header">
+        <h1 class="title">Daily Routine Dashboard</h1>
+        <p class="subtitle">Your personalized schedule for today</p>
+        <div class="current-day" id="currentDay"></div>
+    </div>
+    
+    <div class="container">
+        <div class="dashboard">
+            <!-- Class Schedule Card -->
+            <div class="card">
+                <h2 class="card-title routine-title">📚 Today's Classes</h2>
+                <div class="timeline" id="classSchedule">
+                    <!-- Classes will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Mess Menu Card -->
+            <div class="card">
+                <h2 class="card-title mess-title">🍽️ Mess Menu</h2>
+                <div id="messMenu">
+                    <!-- Mess menu will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CSV Data (embedded) -->
+    <script id="routine-data" type="text/plain">
+Day,9:00 - 10:00,10:00 - 11:00,11:00 - 12:00,12:00 - 1:00,1:00 - 2:00,2:00 - 3:00,3:00 - 4:00,4:00 - 5:00
+Monday,SD,Free,Free,Free,Lunch,Free,Free,NLP
+Tuesday,Free,SD,Free,Free,Lunch,Free,Free,NLP
+Wednesday,Free,Free,SD,Free,Lunch,Free,Free,Free
+Thursday,Free,Literature,Literature,Free,Lunch,Free,Free,NLP
+Friday,Free,Free,Literature,Free,Lunch,Free,Free,Free
+    </script>
+    
+    <script>
+        // Global variables
+        let scene, camera, renderer, stars = [];
+        let routineData = {};
+        let messMenuData = {};
+        
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+        
+        async function initializeApp() {
+            // Initialize background animations
+            initParticles();
+            initSpaceBackground();
+            
+            // Load data
+            await loadRoutineData();
+            await loadMessMenuData();
+            
+            // Get current day and display routine
+            const currentDay = getCurrentDay();
+            displayCurrentDay(currentDay);
+            displayTodaysSchedule(currentDay);
+            displayMessMenu(currentDay);
+            
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+                animateElements();
+            }, 2000);
+        }
+        
+        function initParticles() {
+            particlesJS('particles-js', {
+                particles: {
+                    number: { value: 100 },
+                    color: { value: ['#ff6b6b', '#4ecdc4', '#45b7d1'] },
+                    shape: { type: 'circle' },
+                    opacity: { value: 0.5, random: true },
+                    size: { value: 3, random: true },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: '#4ecdc4',
+                        opacity: 0.2,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 2,
+                        direction: 'none',
+                        random: true,
+                        straight: false,
+                        out_mode: 'out'
+                    }
+                },
+                interactivity: {
+                    detect_on: 'canvas',
+                    events: {
+                        onhover: { enable: true, mode: 'grab' },
+                        onclick: { enable: true, mode: 'push' }
+                    }
+                }
+            });
+        }
+        
+        function initSpaceBackground() {
+            // Create Three.js scene
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('space-background').appendChild(renderer.domElement);
+            
+            // Create stars
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 2000;
+            const positions = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i++) {
+                positions[i] = (Math.random() - 0.5) * 2000;
+            }
+            
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0x4ecdc4,
+                size: 2,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const starsField = new THREE.Points(starGeometry, starMaterial);
+            scene.add(starsField);
+            
+            // Create planets
+            createPlanets();
+            
+            camera.position.z = 500;
+            
+            // Animation loop
+            animate3D();
+        }
+        
+        function createPlanets() {
+            const planetGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const planetColors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0x96ceb4, 0xffa726];
+            
+            for (let i = 0; i < 5; i++) {
+                const planetMaterial = new THREE.MeshBasicMaterial({ 
+                    color: planetColors[i],
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                
+                // Position planets in orbit
+                const angle = (i / 5) * Math.PI * 2;
+                const radius = 100 + i * 50;
+                planet.position.x = Math.cos(angle) * radius;
+                planet.position.y = Math.sin(angle) * radius;
+                planet.position.z = -200;
+                
+                planet.userData = { 
+                    orbitRadius: radius, 
+                    orbitSpeed: 0.001 + i * 0.0005,
+                    angle: angle
+                };
+                
+                scene.add(planet);
+                stars.push(planet);
+            }
+        }
+        
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            
+            // Rotate stars
+            scene.children[0].rotation.y += 0.001;
+            
+            // Animate planets in orbit
+            stars.forEach(planet => {
+                if (planet.userData) {
+                    planet.userData.angle += planet.userData.orbitSpeed;
+                    planet.position.x = Math.cos(planet.userData.angle) * planet.userData.orbitRadius;
+                    planet.position.y = Math.sin(planet.userData.angle) * planet.userData.orbitRadius;
+                    planet.rotation.y += 0.01;
+                }
+            });
+            
+            renderer.render(scene, camera);
+        }
+        
+        function loadRoutineData() {
+            const csvData = document.getElementById('routine-data').textContent.trim();
+            const lines = csvData.split('\n');
+            const headers = lines[0].split(',');
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const day = values[0];
+                routineData[day] = {};
+                
+                for (let j = 1; j < headers.length; j++) {
+                    routineData[day][headers[j]] = values[j];
+                }
+            }
+        }
+        
+        async function loadMessMenuData() {
+            // Since we can't directly read the Excel file, we'll create sample data
+            // In a real implementation, you'd use a file input or server-side processing
+            messMenuData = {
+                Monday: {
+                    breakfast: "Poha, Bread, Tea/Coffee",
+                    lunch: "Rice, Dal, Vegetables, Chapati",
+                    snacks: "Samosa, Tea",
+                    dinner: "Rice, Curry, Vegetables"
+                },
+                Tuesday: {
+                    breakfast: "Idli, Sambhar, Chutney, Tea/Coffee",
+                    lunch: "Rice, Rajma, Mixed Veg, Chapati",
+                    snacks: "Biscuits, Tea",
+                    dinner: "Chapati, Dal, Sabzi"
+                },
+                Wednesday: {
+                    breakfast: "Upma, Bread, Tea/Coffee",
+                    lunch: "Rice, Chole, Aloo Gobi, Chapati",
+                    snacks: "Pakora, Tea",
+                    dinner: "Rice, Fish Curry, Vegetables"
+                },
+                Thursday: {
+                    breakfast: "Paratha, Curd, Pickle, Tea/Coffee",
+                    lunch: "Rice, Dal Fry, Paneer, Chapati",
+                    snacks: "Sandwich, Tea",
+                    dinner: "Chapati, Chicken Curry, Rice"
+                },
+                Friday: {
+                    breakfast: "Dosa, Sambhar, Chutney, Tea/Coffee",
+                    lunch: "Biryani, Raita, Pickle",
+                    snacks: "Cake, Tea",
+                    dinner: "Chapati, Dal, Mixed Vegetables"
+                },
+                Saturday: {
+                    breakfast: "Bread, Jam, Butter, Tea/Coffee",
+                    lunch: "Rice, Kadhi, Vegetables, Chapati",
+                    snacks: "Namkeen, Tea",
+                    dinner: "Rice, Mutton Curry, Chapati"
+                },
+                Sunday: {
+                    breakfast: "Puri, Sabzi, Tea/Coffee",
+                    lunch: "Special Rice, Dal, Sweets, Chapati",
+                    snacks: "Ice Cream, Cold Drink",
+                    dinner: "Chapati, Special Curry, Rice"
+                }
+            };
+        }
+        
+        function getCurrentDay() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const today = new Date();
+            return days[today.getDay()];
+        }
+        
+        function displayCurrentDay(day) {
+            const currentDayElement = document.getElementById('currentDay');
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            
+            currentDayElement.innerHTML = `
+                ${day}<br>
+                <span style="font-size: 1rem; opacity: 0.8;">
+                    ${now.toLocaleDateString('en-US', options)}
+                </span>
+            `;
+        }
+        
+        function displayTodaysSchedule(day) {
+            const scheduleContainer = document.getElementById('classSchedule');
+            const todaySchedule = routineData[day];
+            
+            if (!todaySchedule) {
+                scheduleContainer.innerHTML = '<p>No classes scheduled for today! 🎉</p>';
+                return;
+            }
+            
+            let html = '';
+            let index = 0;
+            
+            Object.entries(todaySchedule).forEach(([time, subject]) => {
+                const isLunch = subject.toLowerCase() === 'lunch';
+                const isFree = subject.toLowerCase() === 'free';
+                
+                html += `
+                    <div class="timeline-item" style="--index: ${index}">
+                        <div class="time-slot ${isLunch ? 'lunch' : ''} ${isFree ? 'free' : ''}">
+                            <div class="time">${time}</div>
+                            <div class="subject">${subject}</div>
+                        </div>
+                    </div>
+                `;
+                index++;
+            });
+            
+            scheduleContainer.innerHTML = html;
+        }
+        
+        function displayMessMenu(day) {
+            const messContainer = document.getElementById('messMenu');
+            const todayMenu = messMenuData[day];
+            
+            if (!todayMenu) {
+                messContainer.innerHTML = '<p>Menu not available for today</p>';
+                return;
+            }
+            
+            let html = '';
+            let index = 0;
+            
+            Object.entries(todayMenu).forEach(([mealTime, items]) => {
+                html += `
+                    <div class="mess-item" style="--index: ${index}">
+                        <div class="meal-time">${mealTime.charAt(0).toUpperCase() + mealTime.slice(1)}</div>
+                        <div class="meal-items">${items}</div>
+                    </div>
+                `;
+                index++;
+            });
+            
+            messContainer.innerHTML = html;
+        }
+        
+        function animateElements() {
+            // GSAP animations
+            gsap.from('.card', {
+                duration: 1,
+                y: 100,
+                opacity: 0,
+                stagger: 0.3,
+                ease: 'back.out(1.7)'
+            });
+            
+            gsap.from('.timeline-item', {
+                duration: 0.8,
+                x: 50,
+                opacity: 0,
+                stagger: 0.1,
+                ease: 'power2.out',
+                delay: 0.5
+            });
+            
+            gsap.from('.mess-item', {
+                duration: 0.8,
+                y: 30,
+                opacity: 0,
+                stagger: 0.1,
+                ease: 'power2.out',
+                delay: 0.7
+            });
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
+        
+        // Add some interactive effects
+        document.addEventListener('mousemove', function(e) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                    const xPercent = (x / rect.width) * 100;
+                    const yPercent = (y / rect.height) * 100;
+                    
+                    card.style.background = `
+                        radial-gradient(circle at ${xPercent}% ${yPercent}%, 
+                        rgba(78, 205, 196, 0.1) 0%, 
+                        rgba(255, 255, 255, 0.05) 50%)
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
