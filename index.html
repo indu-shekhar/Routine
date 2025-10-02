@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Routine & Mess Menu</title>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="config.js"></script>
     <style>
         * {
             margin: 0;
@@ -408,6 +410,181 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Google Calendar Integration Styles */
+        .calendar-sync-section {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .google-btn {
+            background: white;
+            color: #444;
+            border: 2px solid #ddd;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            font-family: 'Comic Neue', 'Segoe UI', sans-serif;
+        }
+
+        .google-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            border-color: #4285f4;
+        }
+
+        .google-btn:active {
+            transform: translateY(0);
+        }
+
+        .google-btn.primary {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border: none;
+        }
+
+        .google-btn.danger {
+            background: #ea4335;
+            color: white;
+            border: none;
+        }
+
+        .google-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sync-status {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        .sync-status.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #2e7d32;
+        }
+
+        .sync-status.error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #c62828;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group {
+            margin: 15px 0;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-group label:hover {
+            background: #f5f5f5;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .modal-btn.primary {
+            background: #4285f4;
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -416,6 +593,18 @@
             <h1>📅 Daily Routine & Mess Menu</h1>
             <div class="datetime" id="currentDate"></div>
             <div class="current-time" id="currentTime"></div>
+            <div class="calendar-sync-section">
+                <button class="google-btn" id="authorizeButton" style="display: none;">
+                    📅 Connect Google Calendar
+                </button>
+                <button class="google-btn primary" id="exportButton" style="display: none;">
+                    ⬆️ Export to Calendar
+                </button>
+                <button class="google-btn danger" id="signoutButton" style="display: none;">
+                    🚪 Sign Out
+                </button>
+                <span class="sync-status" id="syncStatus"></span>
+            </div>
         </div>
 
         <div class="content">
@@ -430,6 +619,35 @@
                     <h2><span class="icon">🍽️</span>Today's Mess Menu</h2>
                     <div class="menu-grid" id="menuGrid"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📤 Export to Google Calendar</h2>
+                <p>Choose what you'd like to export:</p>
+            </div>
+            <div class="modal-body">
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="exportRoutine" checked>
+                        <span>📚 Class Schedule (Weekly recurring)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="exportMenu" checked>
+                        <span>🍽️ Mess Menu (Weekly recurring)</span>
+                    </label>
+                </div>
+                <p style="color: #666; font-size: 0.9em; margin-top: 15px;">
+                    ℹ️ Events will be created as recurring weekly events for the semester (16 weeks).
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn secondary" onclick="closeExportModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="confirmExport()">Export</button>
             </div>
         </div>
     </div>
@@ -668,9 +886,373 @@
             }
         }
 
+        // Google Calendar Integration
+        class GoogleCalendarSync {
+            constructor(routineApp) {
+                this.routineApp = routineApp;
+                this.isSignedIn = false;
+                this.initClient();
+            }
+
+            initClient() {
+                // Check if config is loaded
+                if (typeof GOOGLE_CONFIG === 'undefined') {
+                    console.warn('Google Calendar config not found. Please copy config.example.js to config.js and add your credentials.');
+                    this.updateSigninStatus(false);
+                    return;
+                }
+
+                gapi.load('client:auth2', () => {
+                    gapi.client.init({
+                        apiKey: GOOGLE_CONFIG.API_KEY,
+                        clientId: GOOGLE_CONFIG.CLIENT_ID,
+                        discoveryDocs: GOOGLE_CONFIG.DISCOVERY_DOCS,
+                        scope: GOOGLE_CONFIG.SCOPES
+                    }).then(() => {
+                        // Listen for sign-in state changes
+                        gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn) => {
+                            this.updateSigninStatus(isSignedIn);
+                        });
+
+                        // Handle initial sign-in state
+                        this.updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+                    }, (error) => {
+                        console.error('Error initializing Google API client:', error);
+                        this.showStatus('Configuration error. Check console for details.', 'error');
+                    });
+                });
+            }
+
+            updateSigninStatus(isSignedIn) {
+                this.isSignedIn = isSignedIn;
+                const authorizeButton = document.getElementById('authorizeButton');
+                const signoutButton = document.getElementById('signoutButton');
+                const exportButton = document.getElementById('exportButton');
+
+                if (isSignedIn) {
+                    authorizeButton.style.display = 'none';
+                    signoutButton.style.display = 'inline-flex';
+                    exportButton.style.display = 'inline-flex';
+                    this.showStatus('✅ Connected to Google Calendar', 'success');
+                } else {
+                    authorizeButton.style.display = 'inline-flex';
+                    signoutButton.style.display = 'none';
+                    exportButton.style.display = 'none';
+                    this.showStatus('');
+                }
+            }
+
+            handleAuthClick() {
+                if (typeof gapi === 'undefined' || !gapi.auth2) {
+                    this.showStatus('Google Calendar not configured', 'error');
+                    return;
+                }
+                gapi.auth2.getAuthInstance().signIn();
+            }
+
+            handleSignoutClick() {
+                gapi.auth2.getAuthInstance().signOut();
+            }
+
+            showStatus(message, type = '') {
+                const statusElement = document.getElementById('syncStatus');
+                statusElement.textContent = message;
+                statusElement.className = 'sync-status ' + type;
+            }
+
+            async exportToCalendar(includeRoutine, includeMenu) {
+                if (!this.isSignedIn) {
+                    this.showStatus('Please sign in first', 'error');
+                    return;
+                }
+
+                this.showStatus('⏳ Exporting...', '');
+                
+                try {
+                    let eventsCreated = 0;
+
+                    if (includeRoutine) {
+                        eventsCreated += await this.exportRoutine();
+                    }
+
+                    if (includeMenu) {
+                        eventsCreated += await this.exportMenu();
+                    }
+
+                    this.showStatus(`✅ Exported ${eventsCreated} events!`, 'success');
+                    
+                    setTimeout(() => {
+                        this.showStatus('✅ Connected to Google Calendar', 'success');
+                    }, 5000);
+                } catch (error) {
+                    console.error('Export error:', error);
+                    this.showStatus('❌ Export failed: ' + error.message, 'error');
+                }
+            }
+
+            async exportRoutine() {
+                const routineData = this.routineApp.routineData;
+                if (!routineData || !routineData.data) {
+                    throw new Error('No routine data available');
+                }
+
+                const config = typeof CALENDAR_SETTINGS !== 'undefined' ? CALENDAR_SETTINGS : {
+                    TIMEZONE: 'Asia/Kolkata',
+                    COLORS: { CLASS: '9' },
+                    REMINDERS: { CLASS: [15] },
+                    RECURRENCE: { ENABLED: true, WEEKS: 16 }
+                };
+
+                let eventsCreated = 0;
+                const batch = gapi.client.newBatch();
+
+                // Get the next Monday as start date
+                const nextMonday = this.getNextMonday();
+
+                // Process each day's routine
+                for (const dayData of routineData.data) {
+                    const dayName = dayData.Day;
+                    const dayOffset = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].indexOf(dayName);
+                    
+                    if (dayOffset === -1) continue;
+
+                    // Get the date for this day
+                    const eventDate = new Date(nextMonday);
+                    eventDate.setDate(eventDate.getDate() + dayOffset);
+
+                    // Time slots from 9 AM to 5 PM
+                    const timeSlots = [
+                        { time: '9:00 - 10:00', start: '09:00', end: '10:00' },
+                        { time: '10:00 - 11:00', start: '10:00', end: '11:00' },
+                        { time: '11:00 - 12:00', start: '11:00', end: '12:00' },
+                        { time: '12:00 - 1:00', start: '12:00', end: '13:00' },
+                        { time: '1:00 - 2:00', start: '13:00', end: '14:00' },
+                        { time: '2:00 - 3:00', start: '14:00', end: '15:00' },
+                        { time: '3:00 - 4:00', start: '15:00', end: '16:00' },
+                        { time: '4:00 - 5:00', start: '16:00', end: '17:00' }
+                    ];
+
+                    for (const slot of timeSlots) {
+                        const subject = dayData[slot.time];
+                        
+                        // Skip free slots and lunch
+                        if (!subject || subject.toLowerCase() === 'free' || subject.toLowerCase() === 'lunch') {
+                            continue;
+                        }
+
+                        const startDateTime = this.formatDateTime(eventDate, slot.start);
+                        const endDateTime = this.formatDateTime(eventDate, slot.end);
+
+                        const event = {
+                            'summary': `📚 ${subject}`,
+                            'description': `Class: ${subject}\nTime: ${slot.time}`,
+                            'start': {
+                                'dateTime': startDateTime,
+                                'timeZone': config.TIMEZONE
+                            },
+                            'end': {
+                                'dateTime': endDateTime,
+                                'timeZone': config.TIMEZONE
+                            },
+                            'colorId': config.COLORS.CLASS,
+                            'reminders': {
+                                'useDefault': false,
+                                'overrides': config.REMINDERS.CLASS.map(min => ({ 'method': 'popup', 'minutes': min }))
+                            }
+                        };
+
+                        // Add recurrence if enabled
+                        if (config.RECURRENCE.ENABLED) {
+                            event.recurrence = [`RRULE:FREQ=WEEKLY;COUNT=${config.RECURRENCE.WEEKS}`];
+                        }
+
+                        batch.add(
+                            gapi.client.calendar.events.insert({
+                                'calendarId': 'primary',
+                                'resource': event
+                            })
+                        );
+                        eventsCreated++;
+                    }
+                }
+
+                if (eventsCreated > 0) {
+                    await batch.then((response) => {
+                        console.log('Routine events created:', response);
+                    });
+                }
+
+                return eventsCreated;
+            }
+
+            async exportMenu() {
+                const menuData = this.routineApp.menuData;
+                if (!menuData || !menuData.data) {
+                    throw new Error('No menu data available');
+                }
+
+                const config = typeof CALENDAR_SETTINGS !== 'undefined' ? CALENDAR_SETTINGS : {
+                    TIMEZONE: 'Asia/Kolkata',
+                    COLORS: { MEAL: '6', SNACK: '5' },
+                    REMINDERS: { MEAL: [30], SNACK: [15] },
+                    RECURRENCE: { ENABLED: true, WEEKS: 16 }
+                };
+
+                let eventsCreated = 0;
+                const batch = gapi.client.newBatch();
+
+                // Get the next Monday as start date
+                const nextMonday = this.getNextMonday();
+
+                // Meal times
+                const mealTimes = {
+                    'Breakfast': { start: '08:00', end: '09:00', icon: '🌅', color: config.COLORS.MEAL },
+                    'Lunch': { start: '13:00', end: '14:00', icon: '☀️', color: config.COLORS.MEAL },
+                    'Snacks': { start: '16:30', end: '17:00', icon: '☕', color: config.COLORS.SNACK },
+                    'Dinner': { start: '20:00', end: '21:00', icon: '🌙', color: config.COLORS.MEAL }
+                };
+
+                // Days of the week
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+                for (const mealRow of menuData.data) {
+                    const mealType = mealRow['Column 1'];
+                    if (!mealType || !mealTimes[mealType]) continue;
+
+                    const mealInfo = mealTimes[mealType];
+
+                    for (const day of days) {
+                        const menuItems = mealRow[day];
+                        if (!menuItems) continue;
+
+                        const dayOffset = days.indexOf(day);
+                        const eventDate = new Date(nextMonday);
+                        // Adjust for Sunday being at the beginning
+                        eventDate.setDate(eventDate.getDate() + dayOffset - 1);
+                        if (dayOffset === 0) { // Sunday
+                            eventDate.setDate(eventDate.getDate() + 6);
+                        }
+
+                        const startDateTime = this.formatDateTime(eventDate, mealInfo.start);
+                        const endDateTime = this.formatDateTime(eventDate, mealInfo.end);
+
+                        // Truncate menu items if too long
+                        const description = menuItems.length > 500 ? menuItems.substring(0, 497) + '...' : menuItems;
+
+                        const event = {
+                            'summary': `${mealInfo.icon} ${mealType}`,
+                            'description': description,
+                            'start': {
+                                'dateTime': startDateTime,
+                                'timeZone': config.TIMEZONE
+                            },
+                            'end': {
+                                'dateTime': endDateTime,
+                                'timeZone': config.TIMEZONE
+                            },
+                            'colorId': mealInfo.color,
+                            'reminders': {
+                                'useDefault': false,
+                                'overrides': (mealType === 'Snacks' ? config.REMINDERS.SNACK : config.REMINDERS.MEAL).map(min => ({ 'method': 'popup', 'minutes': min }))
+                            }
+                        };
+
+                        // Add recurrence if enabled
+                        if (config.RECURRENCE.ENABLED) {
+                            event.recurrence = [`RRULE:FREQ=WEEKLY;COUNT=${config.RECURRENCE.WEEKS}`];
+                        }
+
+                        batch.add(
+                            gapi.client.calendar.events.insert({
+                                'calendarId': 'primary',
+                                'resource': event
+                            })
+                        );
+                        eventsCreated++;
+                    }
+                }
+
+                if (eventsCreated > 0) {
+                    await batch.then((response) => {
+                        console.log('Menu events created:', response);
+                    });
+                }
+
+                return eventsCreated;
+            }
+
+            getNextMonday() {
+                const today = new Date();
+                const day = today.getDay();
+                const diff = day === 0 ? 1 : 8 - day; // If Sunday, next day is Monday; otherwise calculate
+                const nextMonday = new Date(today);
+                nextMonday.setDate(today.getDate() + diff);
+                nextMonday.setHours(0, 0, 0, 0);
+                return nextMonday;
+            }
+
+            formatDateTime(date, time) {
+                const [hours, minutes] = time.split(':');
+                const dateTime = new Date(date);
+                dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                return dateTime.toISOString();
+            }
+        }
+
+        // Modal functions
+        function openExportModal() {
+            document.getElementById('exportModal').style.display = 'block';
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        function confirmExport() {
+            const includeRoutine = document.getElementById('exportRoutine').checked;
+            const includeMenu = document.getElementById('exportMenu').checked;
+            
+            if (!includeRoutine && !includeMenu) {
+                alert('Please select at least one option to export.');
+                return;
+            }
+            
+            closeExportModal();
+            window.calendarSync.exportToCalendar(includeRoutine, includeMenu);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('exportModal');
+            if (event.target === modal) {
+                closeExportModal();
+            }
+        }
+
         // Initialize the app when the page loads
+        let routineApp;
+        let calendarSync;
+        
         document.addEventListener('DOMContentLoaded', () => {
-            new RoutineMenuApp();
+            routineApp = new RoutineMenuApp();
+            
+            // Initialize Google Calendar after a short delay to ensure app data is loaded
+            setTimeout(() => {
+                calendarSync = new GoogleCalendarSync(routineApp);
+                
+                // Set up button event listeners
+                document.getElementById('authorizeButton').addEventListener('click', () => {
+                    calendarSync.handleAuthClick();
+                });
+                
+                document.getElementById('signoutButton').addEventListener('click', () => {
+                    calendarSync.handleSignoutClick();
+                });
+                
+                document.getElementById('exportButton').addEventListener('click', () => {
+                    openExportModal();
+                });
+            }, 1000);
         });
     </script>
 </body>
