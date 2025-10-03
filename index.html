@@ -436,29 +436,328 @@
             }
         }
 
-        @media (max-width: 768px) {
+        /* Tablet styles (medium screens) */
+        @media (max-width: 1024px) {
             .header h1 {
-                font-size: 2em;
+                font-size: 2.4em;
             }
             
-            .content {
-                padding: 20px;
-            }
-            
-            .section {
-                padding: 20px;
+            .section h2 {
+                font-size: 1.8em;
             }
             
             .routine-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        /* Mobile styles (small screens) */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 18px;
+                border-width: 1px;
+            }
+
+            .header {
+                padding: 25px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+                margin-bottom: 12px;
+            }
+
+            .header::before,
+            .header::after {
+                font-size: 0.9em;
+            }
+
+            .datetime {
+                font-size: 1.05em;
+                padding: 6px 14px;
+                margin-bottom: 12px;
+            }
+
+            .current-time {
+                font-size: 1em;
+                padding: 10px 18px;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .section {
+                padding: 20px 18px;
+                margin-bottom: 25px;
+                border-width: 2px;
+                border-radius: 15px;
+            }
+
+            .section::before {
+                font-size: 1.2em;
+                top: 12px;
+                right: 15px;
+            }
+
+            .section h2 {
+                font-size: 1.5em;
+                margin-bottom: 18px;
+            }
+
+            .icon {
+                font-size: 1.1em;
+                min-width: 35px;
+                height: 35px;
+                margin-right: 10px;
+                padding: 6px;
+            }
+
+            .routine-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+                margin-top: 18px;
+            }
+
+            .time-slot {
+                padding: 15px;
+                border-radius: 12px;
+                border-width: 2px;
+            }
+
+            .time-slot h3 {
+                font-size: 1em;
+                margin-bottom: 8px;
+            }
+
+            .time-slot h3::before {
+                font-size: 1.1em;
+                margin-right: 6px;
             }
             
             .menu-grid {
                 grid-template-columns: 1fr;
+                gap: 18px;
+                margin-top: 18px;
+            }
+
+            .meal-card {
+                padding: 20px;
+                border-radius: 15px;
+                border-width: 2px;
+            }
+
+            .meal-card h3 {
+                font-size: 1.2em;
+                margin-bottom: 15px;
+            }
+
+            .meal-items {
+                font-size: 0.95em;
+                line-height: 1.7;
+            }
+
+            .calendar-subtitle {
+                font-size: 0.9em;
+                padding: 8px 14px;
+                margin-bottom: 18px;
+            }
+
+            .calendar-frame {
+                padding: 12px;
+                border-width: 2px;
+                border-radius: 15px;
             }
 
             .calendar-iframe {
-                height: 420px;
+                height: 400px;
+                border-radius: 10px;
+            }
+
+            .loading {
+                padding: 35px 20px;
+                font-size: 1.05em;
+            }
+
+            .loading::before {
+                font-size: 1.6em;
+                margin-bottom: 12px;
+            }
+
+            .error {
+                padding: 15px;
+                font-size: 0.95em;
+                border-radius: 12px;
+            }
+
+            /* Reduce floating elements on mobile */
+            .floating-element {
+                display: none;
+            }
+        }
+
+        /* Extra small mobile devices */
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .container {
+                border-radius: 15px;
+            }
+
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+                margin-bottom: 10px;
+            }
+
+            .header::before,
+            .header::after {
+                font-size: 0.75em;
+            }
+
+            .datetime {
+                font-size: 0.95em;
+                padding: 5px 12px;
+                margin-bottom: 10px;
+            }
+
+            .current-time {
+                font-size: 0.9em;
+                padding: 8px 15px;
+            }
+
+            .content {
+                padding: 15px 10px;
+            }
+
+            .section {
+                padding: 15px 12px;
+                margin-bottom: 20px;
+                border-radius: 12px;
+            }
+
+            .section::before {
+                font-size: 1em;
+                top: 10px;
+                right: 12px;
+            }
+
+            .section h2 {
+                font-size: 1.3em;
+                margin-bottom: 15px;
+            }
+
+            .icon {
+                font-size: 1em;
+                min-width: 30px;
+                height: 30px;
+                margin-right: 8px;
+                padding: 5px;
+            }
+
+            .routine-grid {
+                gap: 12px;
+                margin-top: 15px;
+            }
+
+            .time-slot {
+                padding: 12px;
+                border-radius: 10px;
+            }
+
+            .time-slot h3 {
+                font-size: 0.95em;
+                margin-bottom: 6px;
+            }
+
+            .time-slot div {
+                font-size: 0.9em;
+            }
+
+            .menu-grid {
+                gap: 15px;
+                margin-top: 15px;
+            }
+
+            .meal-card {
+                padding: 15px;
+                border-radius: 12px;
+            }
+
+            .meal-card h3 {
+                font-size: 1.1em;
+                margin-bottom: 12px;
+            }
+
+            .meal-items {
+                font-size: 0.9em;
+                line-height: 1.6;
+            }
+
+            .calendar-subtitle {
+                font-size: 0.85em;
+                padding: 7px 12px;
+                margin-bottom: 15px;
+                display: block;
+                text-align: center;
+            }
+
+            .calendar-frame {
+                padding: 10px;
+                border-radius: 12px;
+            }
+
+            .calendar-iframe {
+                height: 380px;
+                border-radius: 8px;
+            }
+
+            .loading {
+                padding: 30px 15px;
+                font-size: 1em;
+            }
+
+            .loading::before {
+                font-size: 1.4em;
+                margin-bottom: 10px;
+            }
+
+            .error {
+                padding: 12px;
+                font-size: 0.9em;
+                border-radius: 10px;
+            }
+        }
+
+        /* Landscape mode for small devices */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header h1 {
+                font-size: 1.6em;
+            }
+
+            .datetime {
+                font-size: 0.95em;
+            }
+
+            .current-time {
+                font-size: 0.9em;
+            }
+
+            .calendar-iframe {
+                height: 280px;
             }
         }
     </style>
